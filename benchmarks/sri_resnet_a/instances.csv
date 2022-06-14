@@ -1,0 +1,2 @@
+onnx/resnet_3b2_bn_mixup_adv_4.0_bs128_lr-1.onnx,vnnlib/cifar10_spec_idx_9953_eps_0.00350.vnnlib, 300.0
+onnx/resnet_3b2_bn_mixup_adv_4.0_bs128_lr-1.onnx,vnnlib/cifar10_spec_idx_3850_eps_0.00350.vnnlib, 300.0
