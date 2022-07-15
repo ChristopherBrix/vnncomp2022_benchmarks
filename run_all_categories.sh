@@ -105,7 +105,7 @@ do
 	continue
     fi
 	
-    while read ONNX VNNLIB TIMEOUT_CR
+    while read ONNX VNNLIB TIMEOUT_CR || [[ $ONNX ]]
     do
 	ONNX_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${ONNX}"
 	VNNLIB_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${VNNLIB}"
