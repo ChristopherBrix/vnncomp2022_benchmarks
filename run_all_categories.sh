@@ -105,21 +105,24 @@ do
 	continue
     fi
 	
+    PREV_ONNX_PATH=""
     while read ONNX VNNLIB TIMEOUT_CR || [[ $ONNX ]]
     do
-	ONNX_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${ONNX}"
-	VNNLIB_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${VNNLIB}"
-	
-	# remove carriage return from timeout
-	TIMEOUT=$(echo $TIMEOUT_CR | sed -e 's/\r//g')
-	
-	$SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE
-	
-	TIMEOUT_OF_EXECUTED_INSTANCES=$(python3 -c "print($TIMEOUT_OF_EXECUTED_INSTANCES + $TIMEOUT)")
-	
-	if [[ $FIRST_INSTANCE_ONLY == "true" && $CATEGORY != "test" ]]; then
-	    break
-	fi
+        ONNX_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${ONNX}"
+        VNNLIB_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${VNNLIB}"
+
+        if [[ "$PREV_ONNX_PATH" == "$ONNX_PATH" && $FIRST_INSTANCE_ONLY == "true" && $CATEGORY != "test" ]]; then
+            continue
+        fi
+        PREV_ONNX_PATH=$ONNX_PATH
+        
+        # remove carriage return from timeout
+        TIMEOUT=$(echo $TIMEOUT_CR | sed -e 's/\r//g')
+        
+        $SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE
+        
+        TIMEOUT_OF_EXECUTED_INSTANCES=$(python3 -c "print($TIMEOUT_OF_EXECUTED_INSTANCES + $TIMEOUT)")
+        
 		
     done < $INSTANCES_CSV_PATH
     IFS=$PREV_IFS
