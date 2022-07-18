@@ -20,7 +20,7 @@ MEASURE_OVERHEAD="true"
 
 # check arguments
 if [ "$#" -ne 5 ] && [ "$#" -ne 6 ]; then
-    echo "Expected 5-6 arguments (got $#): '$VERSION_STRING' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, categories, single_run (0/1, if 1 then run the first instance of each category only)"
+    echo "Expected 5-6 arguments (got $#): '$VERSION_STRING' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, categories, run_which_networks (all|different|first)"
     exit 1
 fi
 
@@ -34,13 +34,12 @@ VNNCOMP_FOLDER=$3
 RESULT_CSV_FILE=$4
 # list of benchmark category names seperated by spaces
 CATEGORY_LIST=$5
-SINGLE_RUN=$6
+RUN_WHICH_NETWORKS=$6
 
-# if "true", only run the first benchmark instance in each category (for testing)
-FIRST_INSTANCE_ONLY="false"
-
-if [[ $SINGLE_RUN == "1" ]]; then
-    FIRST_INSTANCE_ONLY="true"
+VALID_OPTIONS=("all" "different" "first")
+if [[ ! "${VALID_OPTIONS[*]}" =~ $RUN_WHICH_NETWORKS ]]; then
+    echo "run all|different|first networks per benchmark"
+    exit 1
 fi
 
 if [[ $RESULT_CSV_FILE != *csv ]]; then
@@ -105,29 +104,33 @@ do
 	continue
     fi
 	
-    PREV_ONNX_PATH=""
+    PREV_ONNX_PATHS=()
     while read ONNX VNNLIB TIMEOUT_CR || [[ $ONNX ]]
     do
         ONNX_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${ONNX}"
         VNNLIB_PATH="${VNNCOMP_FOLDER}/benchmarks/${CATEGORY}/${VNNLIB}"
 
-        if [[ "$PREV_ONNX_PATH" == "$ONNX_PATH" && $FIRST_INSTANCE_ONLY == "true" && $CATEGORY != "test" ]]; then
+        if [[ $RUN_WHICH_NETWORKS == "different" && "${PREV_ONNX_PATHS[*]}" =~ "${ONNX_PATH}" && $CATEGORY != "test" ]]; then
             continue
         fi
-        PREV_ONNX_PATH=$ONNX_PATH
+        PREV_ONNX_PATHS+=("$ONNX_PATH")
         
         # remove carriage return from timeout
         TIMEOUT=$(echo $TIMEOUT_CR | sed -e 's/\r//g')
         
-        $SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE
+        echo $SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE
         
         TIMEOUT_OF_EXECUTED_INSTANCES=$(python3 -c "print($TIMEOUT_OF_EXECUTED_INSTANCES + $TIMEOUT)")
         
+        if [[ $RUN_WHICH_NETWORKS == "first" && $CATEGORY != "test" ]]; then
+           break
+        fi
+
 		
     done < $INSTANCES_CSV_PATH
     IFS=$PREV_IFS
 	
-    if [[ $MEASURE_OVERHEAD == "true" && $FIRST_INSTANCE_ONLY != "true" ]]; then
+    if [[ $MEASURE_OVERHEAD == "true" && $RUN_WHICH_NETWORKS == "all" ]]; then
 	# measure overhead at end (hardcoded model)
 	ONNX_PATH="${VNNCOMP_FOLDER}/benchmarks/test/test_nano.onnx"
 	VNNLIB_PATH="${VNNCOMP_FOLDER}/benchmarks/test/test_nano.vnnlib"
