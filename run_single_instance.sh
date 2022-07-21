@@ -1,7 +1,7 @@
 #!/bin/bash
 # run single instance for a single tool and accumulate result to an output csv file
 #
-# args: 'v1' (version string), tool_scripts_folder, category, onnx_file, vnnlib_file, timeout, result_csv_file
+# args: 'v1' (version string), tool_scripts_folder, category, onnx_file, vnnlib_file, timeout, result_csv_file, counterexample_file
 
 VERSION_STRING=v1
 
@@ -17,6 +17,7 @@ ONNX=$4
 VNNLIB=$5
 TIMEOUT=$6
 RESULT_CSV_FILE=$7
+COUNTEREXAMPLE_FILE=$8
 
 if [[ $RESULT_CSV_FILE != *csv ]]; then
 	echo "result csv file '$RESULT_CSV_FILE' should end in .csv"
@@ -85,6 +86,10 @@ else
 
 		# remove whitespace
 		RESULT_STR=${RESULT//[[:space:]]/}
+
+		if [[ ${RESULT_STR} == "sat" ]]; then
+			tail --lines=+2 out.txt > $COUNTEREXAMPLE_FILE
+		fi
 	fi
 
 	echo "run_instance.sh exit code: ${EXIT_CODE}, Result: ${RESULT_STR}, Runtime: ${RUNTIME}"

@@ -1,8 +1,8 @@
 #!/bin/bash
 # run measurements for all categories for a single tool (passed on command line)
-# five args: 'v1' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, [single_run]
+# seven args: 'v1' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, counterexamples_folder, categories, all|different|first
 #
-# for example ./run_all_categories.sh v1 ~/repositories/simple_adversarial_generator/vnncomp_scripts . ./out.csv "test acasxu" 1
+# for example ./run_all_categories.sh v1 ~/repositories/simple_adversarial_generator/vnncomp_scripts . ./out.csv ./counterexamples "test acasxu" all
 
 VERSION_STRING=v1
 SCRIPT_PATH=$(dirname $(realpath $0))
@@ -19,8 +19,8 @@ TIMEOUT_OF_EXECUTED_INSTANCES=0
 MEASURE_OVERHEAD="true"
 
 # check arguments
-if [ "$#" -ne 5 ] && [ "$#" -ne 6 ]; then
-    echo "Expected 5-6 arguments (got $#): '$VERSION_STRING' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, categories, run_which_networks (all|different|first)"
+if [ "$#" -ne 7 ]; then
+    echo "Expected 7 arguments (got $#): '$VERSION_STRING' (version string), tool_scripts_folder, vnncomp_folder, result_csv_file, counterexamples_folder, categories, run_which_networks (all|different|first)"
     exit 1
 fi
 
@@ -32,9 +32,10 @@ fi
 TOOL_FOLDER=$2
 VNNCOMP_FOLDER=$3
 RESULT_CSV_FILE=$4
+COUNTEREXAMPLES_FOLDER=$5
 # list of benchmark category names seperated by spaces
-CATEGORY_LIST=$5
-RUN_WHICH_NETWORKS=$6
+CATEGORY_LIST=$6
+RUN_WHICH_NETWORKS=$7
 
 VALID_OPTIONS=("all" "different" "first")
 if [[ ! "${VALID_OPTIONS[*]}" =~ $RUN_WHICH_NETWORKS ]]; then
@@ -117,9 +118,12 @@ do
         
         # remove carriage return from timeout
         TIMEOUT=$(echo $TIMEOUT_CR | sed -e 's/\r//g')
-        
-        $SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE
-        
+
+        mkdir -p ${COUNTEREXAMPLES_FOLDER}/${CATEGORY}
+        ONNX_FILENAME=$(echo $ONNX | rev | cut -d "/" -f 1 | cut -c6- | rev )
+        VNNLIB_FILENAME=$(echo $VNNLIB | rev | cut -d "/" -f 1 | cut -c8- | rev)
+        $SCRIPT_PATH/run_single_instance.sh v1 $TOOL_FOLDER $CATEGORY $ONNX_PATH $VNNLIB_PATH $TIMEOUT $RESULT_CSV_FILE ${COUNTEREXAMPLES_FOLDER}/${CATEGORY}/${ONNX_FILENAME}_${VNNLIB_FILENAME}.counterexample
+
         TIMEOUT_OF_EXECUTED_INSTANCES=$(python3 -c "print($TIMEOUT_OF_EXECUTED_INSTANCES + $TIMEOUT)")
         
         if [[ $RUN_WHICH_NETWORKS == "first" && $CATEGORY != "test" ]]; then
