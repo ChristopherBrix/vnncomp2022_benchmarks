@@ -82,6 +82,9 @@ else
 		    RESULT_STR="run_instance_timeout"
 		fi
 	else
+		# Workaround for tools that don't separate the result from the generated counterexample
+		sed -i 's/^sat (/sat\n(/g' out.txt
+		
 		RESULT=$(head -n 1 "out.txt")
 
 		# remove whitespace
