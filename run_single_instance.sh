@@ -92,6 +92,8 @@ else
 
 		if [[ ${RESULT_STR} == "sat" ]]; then
 			tail --lines=+2 out.txt > $COUNTEREXAMPLE_FILE
+		elif [[ ${RESULT_STR} == "" ]]; then
+			RESULT_STR="no_result_in_file"
 		fi
 	fi
 
